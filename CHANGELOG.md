@@ -5,6 +5,7 @@
 * Add support for external bundle configuration (#57).
 * Replace `prerequisites` with Maven Enforcer plugin.
 * Remove the deprecated oss-parent from `pom.xml` (See [OSSRH Apache Maven Guide](http://central.sonatype.org/pages/apache-maven.html)).
+* Add `newLineBetweenFiles` option to add new line after every files to merge
 
 ## 1.7.4
 

@@ -452,6 +452,14 @@ public class MinifyMojo extends AbstractMojo {
      */
     @Parameter(property = "closureAngularPass", defaultValue = "false")
     private boolean closureAngularPass;
+    
+    /**
+     * Enable or disable adding new line between merged files.
+     * 
+     * @since 1.7.5
+     */
+    @Parameter(property = "newLineBetweenFiles", defaultValue = "false")
+    private boolean newLineBetweenFiles;
 
     /**
      * Executed when the goal is invoked, it will first invoke a parallel lifecycle, ending at the given phase.
@@ -593,7 +601,7 @@ public class MinifyMojo extends AbstractMojo {
                                            String cssFinalFile) throws FileNotFoundException {
         return new ProcessCSSFilesTask(getLog(), debug, bufferSize, charset, suffix, nosuffix, skipMerge, skipMinify,
                 webappSourceDir, webappTargetDir, cssSourceDir, cssSourceFiles, cssSourceIncludes, cssSourceExcludes,
-                cssTargetDir, cssFinalFile, cssEngine, yuiConfig);
+                cssTargetDir, cssFinalFile, cssEngine, yuiConfig, newLineBetweenFiles);
     }
 
     private ProcessFilesTask createJSTask(YuiConfig yuiConfig, ClosureConfig closureConfig, List<String> jsSourceFiles,
@@ -601,6 +609,6 @@ public class MinifyMojo extends AbstractMojo {
             throws FileNotFoundException {
         return new ProcessJSFilesTask(getLog(), debug, bufferSize, charset, suffix, nosuffix, skipMerge, skipMinify,
                 webappSourceDir, webappTargetDir, jsSourceDir, jsSourceFiles, jsSourceIncludes, jsSourceExcludes,
-                jsTargetDir, jsFinalFile, jsEngine, yuiConfig, closureConfig);
+                jsTargetDir, jsFinalFile, jsEngine, yuiConfig, closureConfig, newLineBetweenFiles);
     }
 }

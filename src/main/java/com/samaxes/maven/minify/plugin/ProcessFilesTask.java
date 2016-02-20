@@ -27,10 +27,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.SequenceInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.zip.GZIPOutputStream;
@@ -82,6 +82,8 @@ public abstract class ProcessFilesTask implements Callable<Object> {
     private final boolean sourceFilesEmpty;
 
     private final boolean sourceIncludesEmpty;
+    
+    private final boolean newLineBetweenFiles;
 
     /**
      * Task constructor.
@@ -105,12 +107,13 @@ public abstract class ProcessFilesTask implements Callable<Object> {
      * @param outputFilename the output file name
      * @param engine minify processor engine selected
      * @param yuiConfig YUI Compressor configuration
+     * @param newLineBetweenFiles Add a new line between every files
      * @throws FileNotFoundException when the given source file does not exist
      */
     public ProcessFilesTask(Log log, boolean verbose, Integer bufferSize, String charset, String suffix,
             boolean nosuffix, boolean skipMerge, boolean skipMinify, String webappSourceDir, String webappTargetDir,
             String inputDir, List<String> sourceFiles, List<String> sourceIncludes, List<String> sourceExcludes,
-            String outputDir, String outputFilename, Engine engine, YuiConfig yuiConfig) throws FileNotFoundException {
+            String outputDir, String outputFilename, Engine engine, YuiConfig yuiConfig, boolean newLineBetweenFiles) throws FileNotFoundException {
         this.log = log;
         this.verbose = verbose;
         this.bufferSize = bufferSize;
@@ -135,6 +138,7 @@ public abstract class ProcessFilesTask implements Callable<Object> {
         }
         this.sourceFilesEmpty = sourceFiles.isEmpty();
         this.sourceIncludesEmpty = sourceIncludes.isEmpty();
+        this.newLineBetweenFiles = newLineBetweenFiles;
     }
 
     /**
@@ -200,14 +204,24 @@ public abstract class ProcessFilesTask implements Callable<Object> {
      */
     protected void merge(File mergedFile) throws IOException {
         mergedFile.getParentFile().mkdirs();
+        
+        Enumeration<InputStream> sourceFiles = new SourceFilesEnumeration(log, files, verbose);
 
-        try (InputStream sequence = new SequenceInputStream(new SourceFilesEnumeration(log, files, verbose));
-                OutputStream out = new FileOutputStream(mergedFile);
-                InputStreamReader sequenceReader = new InputStreamReader(sequence, charset);
-                OutputStreamWriter outWriter = new OutputStreamWriter(out, charset)) {
+        try(OutputStream out = new FileOutputStream(mergedFile);
+            OutputStreamWriter outWriter = new OutputStreamWriter(out, charset)) {
+            
             log.info("Creating the merged file [" + ((verbose) ? mergedFile.getPath() : mergedFile.getName()) + "].");
-
-            IOUtil.copy(sequenceReader, outWriter, bufferSize);
+            while(sourceFiles.hasMoreElements()) {
+                try(InputStream inputStream = sourceFiles.nextElement();
+                    InputStreamReader sequenceReader = new InputStreamReader(inputStream, charset)) {
+                    
+                    IOUtil.copy(sequenceReader, outWriter, bufferSize);
+                    if(newLineBetweenFiles) {
+                        IOUtil.copy(System.lineSeparator().getBytes(), outWriter, bufferSize);
+                    }
+                    
+                }
+            }
         } catch (IOException e) {
             log.error("Failed to concatenate files.", e);
             throw e;
